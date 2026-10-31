@@ -10,19 +10,24 @@ function App() {
 
     // Add or Update Note
     const saveNote = () => {
+
         if (title.trim() === "" || content.trim() === "") {
             alert("Please enter title and note!");
             return;
         }
 
         if (editId !== null) {
+
             setNotes(notes.map(note =>
                 note.id === editId
                     ? { ...note, title, content }
                     : note
             ));
+
             setEditId(null);
+
         } else {
+
             const newNote = {
                 id: Date.now(),
                 title: title,
@@ -58,6 +63,7 @@ function App() {
     return (
         <>
             <style>{`
+
                 * {
                     margin: 0;
                     padding: 0;
@@ -177,6 +183,7 @@ function App() {
                         padding: 15px;
                     }
                 }
+
             `}</style>
 
             <div className="container">
@@ -187,7 +194,8 @@ function App() {
                     Manage your daily notes easily
                 </p>
 
-                {/* Note Form */}
+                {/* Add Note Form */}
+
                 <div className="note-form">
 
                     <input
@@ -224,15 +232,18 @@ function App() {
 
                 </div>
 
-                {/* Notes Display */}
+                {/* Display Notes */}
+
                 <h2>My Notes</h2>
 
                 <div className="notes-list">
 
                     {notes.length === 0 ? (
+
                         <p className="empty">
                             No notes available. Add your first note!
                         </p>
+
                     ) : (
 
                         notes.map(note => (
