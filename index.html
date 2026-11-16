@@ -1,37 +1,49 @@
-```jsx
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 
 function App() {
-  const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = useState(() => {
+    const savedNotes = localStorage.getItem("myNotes");
+    return savedNotes ? JSON.parse(savedNotes) : [];
+  });
+
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [editId, setEditId] = useState(null);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem("myNotes", JSON.stringify(notes));
+  }, [notes]);
 
   // Add or Update Note
-  const saveNote = (e) => {
-    e.preventDefault();
-
+  const saveNote = () => {
     if (title.trim() === "" || content.trim() === "") {
-      alert("Please enter title and content!");
+      alert("Please enter both title and content!");
       return;
     }
 
     if (editId !== null) {
       setNotes(
         notes.map((note) =>
-          note.id === editId ? { ...note, title, content } : note
+          note.id === editId
+            ? { ...note, title, content }
+            : note
         )
       );
+      setEditId(null);
     } else {
-      setNotes([
-        ...notes,
-        { id: Date.now(), title, content }
-      ]);
+      const newNote = {
+        id: Date.now(),
+        title,
+        content
+      };
+
+      setNotes([newNote, ...notes]);
     }
 
     setTitle("");
     setContent("");
-    setEditId(null);
   };
 
   // Edit Note
@@ -43,7 +55,9 @@ function App() {
 
   // Delete Note
   const deleteNote = (id) => {
-    setNotes(notes.filter((note) => note.id !== id));
+    if (window.confirm("Are you sure you want to delete this note?")) {
+      setNotes(notes.filter((note) => note.id !== id));
+    }
   };
 
   // Cancel Editing
@@ -53,149 +67,240 @@ function App() {
     setEditId(null);
   };
 
-  return (
-    <div style={styles.container}>
-      <h1>📝 My Notes App</h1>
-      <p>Manage your daily notes easily</p>
+  const filteredNotes = notes.filter(
+    (note) =>
+      note.title.toLowerCase().includes(search.toLowerCase()) ||
+      note.content.toLowerCase().includes(search.toLowerCase())
+  );
 
-      <form onSubmit={saveNote} style={styles.form}>
-        <h2>{editId !== null ? "Edit Note" : "Add New Note"}</h2>
+  return (
+    <div className="app">
+      <style>{`
+        * {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 0;
+          font-family: Arial, sans-serif;
+          background: #f4f6fb;
+        }
+
+        .app {
+          min-height: 100vh;
+          padding: 30px 20px;
+        }
+
+        .container {
+          max-width: 900px;
+          margin: auto;
+        }
+
+        header {
+          text-align: center;
+          margin-bottom: 30px;
+        }
+
+        header h1 {
+          color: #273469;
+          font-size: 34px;
+          margin-bottom: 8px;
+        }
+
+        header p {
+          color: #777;
+        }
+
+        .note-form {
+          background: white;
+          padding: 25px;
+          border-radius: 12px;
+          box-shadow: 0 3px 15px #00000010;
+          margin-bottom: 25px;
+        }
+
+        input, textarea {
+          width: 100%;
+          padding: 13px;
+          margin-bottom: 15px;
+          border: 1px solid #ddd;
+          border-radius: 7px;
+          font-size: 15px;
+          outline: none;
+          font-family: Arial, sans-serif;
+        }
+
+        input:focus, textarea:focus {
+          border-color: #536dfe;
+        }
+
+        textarea {
+          min-height: 110px;
+          resize: vertical;
+        }
+
+        button {
+          border: none;
+          padding: 11px 18px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+          margin-right: 8px;
+        }
+
+        .save-btn {
+          background: #536dfe;
+          color: white;
+        }
+
+        .cancel-btn {
+          background: #e5e7eb;
+          color: #333;
+        }
+
+        .search {
+          margin-bottom: 20px;
+        }
+
+        .notes-heading {
+          color: #273469;
+          margin-bottom: 15px;
+        }
+
+        .notes-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 18px;
+        }
+
+        .note-card {
+          background: white;
+          padding: 20px;
+          border-radius: 10px;
+          box-shadow: 0 3px 12px #00000010;
+          border-top: 4px solid #536dfe;
+          overflow-wrap: anywhere;
+        }
+
+        .note-card h3 {
+          color: #273469;
+          margin-top: 0;
+        }
+
+        .note-card p {
+          color: #666;
+          line-height: 1.6;
+          white-space: pre-wrap;
+        }
+
+        .edit-btn {
+          background: #e7edff;
+          color: #3653d9;
+        }
+
+        .delete-btn {
+          background: #ffe5e5;
+          color: #dc2626;
+        }
+
+        .empty {
+          text-align: center;
+          color: #888;
+          padding: 30px;
+          background: white;
+          border-radius: 10px;
+        }
+
+        @media (max-width: 500px) {
+          header h1 {
+            font-size: 27px;
+          }
+
+          .app {
+            padding: 20px 12px;
+          }
+        }
+      `}</style>
+
+      <div className="container">
+
+        <header>
+          <h1>📝 My Notes</h1>
+          <p>Write your thoughts, save your ideas!</p>
+        </header>
+
+        <div className="note-form">
+          <h2>{editId !== null ? "Update Note" : "Add New Note"}</h2>
+
+          <input
+            type="text"
+            placeholder="Enter note title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+
+          <textarea
+            placeholder="Write your note here..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
+
+          <button className="save-btn" onClick={saveNote}>
+            {editId !== null ? "Update Note" : "Add Note"}
+          </button>
+
+          {editId !== null && (
+            <button className="cancel-btn" onClick={cancelEdit}>
+              Cancel
+            </button>
+          )}
+        </div>
 
         <input
-          style={styles.input}
+          className="search"
           type="text"
-          placeholder="Enter note title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          placeholder="🔍 Search your notes..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
 
-        <textarea
-          style={styles.input}
-          placeholder="Write your note here"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          rows="4"
-        />
+        <h2 className="notes-heading">
+          My Notes ({filteredNotes.length})
+        </h2>
 
-        <button style={styles.addButton} type="submit">
-          {editId !== null ? "Update Note" : "Add Note"}
-        </button>
-
-        {editId !== null && (
-          <button
-            style={styles.cancelButton}
-            type="button"
-            onClick={cancelEdit}
-          >
-            Cancel
-          </button>
-        )}
-      </form>
-
-      <h2>My Notes ({notes.length})</h2>
-
-      {notes.length === 0 ? (
-        <p>No notes yet. Add your first note!</p>
-      ) : (
-        notes.map((note) => (
-          <div key={note.id} style={styles.note}>
-            <h3>{note.title}</h3>
-            <p>{note.content}</p>
-
-            <button
-              style={styles.editButton}
-              onClick={() => editNote(note)}
-            >
-              Edit
-            </button>
-
-            <button
-              style={styles.deleteButton}
-              onClick={() => deleteNote(note.id)}
-            >
-              Delete
-            </button>
+        {filteredNotes.length === 0 ? (
+          <div className="empty">
+            <h3>No notes found!</h3>
+            <p>Add a new note to get started.</p>
           </div>
-        ))
-      )}
+        ) : (
+          <div className="notes-grid">
+            {filteredNotes.map((note) => (
+              <div className="note-card" key={note.id}>
+                <h3>{note.title}</h3>
+                <p>{note.content}</p>
+
+                <button
+                  className="edit-btn"
+                  onClick={() => editNote(note)}
+                >
+                  ✏️ Edit
+                </button>
+
+                <button
+                  className="delete-btn"
+                  onClick={() => deleteNote(note.id)}
+                >
+                  🗑️ Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }
 
-const styles = {
-  container: {
-    maxWidth: "600px",
-    margin: "30px auto",
-    padding: "20px",
-    fontFamily: "Arial, sans-serif",
-    backgroundColor: "#f4f4f4",
-    borderRadius: "10px",
-  },
-
-  form: {
-    backgroundColor: "white",
-    padding: "20px",
-    borderRadius: "8px",
-    marginBottom: "20px",
-  },
-
-  input: {
-    width: "100%",
-    padding: "10px",
-    marginBottom: "10px",
-    boxSizing: "border-box",
-    border: "1px solid #ccc",
-    borderRadius: "5px",
-    fontSize: "15px",
-  },
-
-  addButton: {
-    backgroundColor: "#4CAF50",
-    color: "white",
-    padding: "10px 15px",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
-
-  cancelButton: {
-    backgroundColor: "#777",
-    color: "white",
-    padding: "10px 15px",
-    marginLeft: "8px",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
-
-  note: {
-    backgroundColor: "white",
-    padding: "15px",
-    marginBottom: "15px",
-    borderRadius: "8px",
-    borderLeft: "5px solid #4CAF50",
-    overflowWrap: "anywhere",
-  },
-
-  editButton: {
-    backgroundColor: "#2196F3",
-    color: "white",
-    padding: "8px 12px",
-    marginRight: "8px",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
-
-  deleteButton: {
-    backgroundColor: "#f44336",
-    color: "white",
-    padding: "8px 12px",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
-};
-
 export default App;
-```
